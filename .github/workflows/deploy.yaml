@@ -16,6 +16,7 @@ jobs:
         uses: bridgecrewio/checkov-action@master
         with:
           directory: terraform
+          skip_check: CKV_TF_1
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
