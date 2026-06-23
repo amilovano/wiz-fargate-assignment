@@ -2,31 +2,26 @@ name: CI-Security-Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   security:
-
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
 
-    - uses: actions/checkout@v4
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: terraform
 
-    - name: Run Checkov (IaC security)
-      uses: bridgecrewio/checkov-action@master
-      with:
-        directory: terraform
-        skip_check: CKV_TF_1
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
 
-   -  name: Run Gitleaks
-      uses: gitleaks/gitleaks-action@v2
-      with:
-        args: detect --source . --redact --verbose --exit-code=2 --report-format=sarif --report-path=${{ github.workspace }}/results.sarif
+      - name: Build Docker image
+        run: docker build -t wiz-app ./app
 
-    - name: Build Docker image
-      run: docker build -t wiz-app ./app
-
-    - name: Run Trivy scan (container security)
-      run: |
-        docker run --rm aquasec/trivy image wiz-app
+      - name: Run Trivy scan
+        run: docker run --rm aquasec/trivy image wiz-app
