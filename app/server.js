@@ -1,41 +1,45 @@
 const express = require("express");
-const { Pool } = require("pg");
+const { MongoClient } = require("mongodb");
 
 const app = express();
 
-const pool = new Pool({
-    host: process.env.DB_HOST || "localhost",
-    user: process.env.DB_USER || "postgres",
-    password: process.env.DB_PASSWORD || "postgres",
-    database: process.env.DB_NAME || "appdb",
-    port: 5432
-});
+const mongoUri =
+  process.env.MONGO_URI ||
+  "mongodb://localhost:27017";
 
-app.get("/", async(req,res)=>{
+let db = null;
 
-    try {
+MongoClient.connect(mongoUri)
+  .then(client => {
+    db = client.db("wizdb");
+    console.log("Connected to MongoDB");
+  })
+  .catch(err => {
+    console.log("Mongo unavailable, continuing startup");
+    console.log(err.message);
+  });
 
-        const result = await pool.query(
-            "SELECT NOW()"
-        );
-
-        res.json({
-            status:"healthy",
-            dbTime: result.rows[0]
-        });
-
-    } catch(err){
-
-        res.status(500).json({
-            error: err.message
-        });
-
+app.get("/", async (req, res) => {
+  try {
+    if (db) {
+      await db.collection("visits").insertOne({
+        timestamp: new Date()
+      });
     }
 
+    res.send("Wiz demo app");
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 });
 
-app.listen(3000,()=>{
+app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    database: db ? "connected" : "not connected"
+  });
+});
 
-console.log("App running on port 3000")
-
+app.listen(3000, () => {
+  console.log("App running on port 3000");
 });

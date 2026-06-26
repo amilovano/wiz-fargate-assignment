@@ -1,14 +1,14 @@
-FROM node:20-alpine
+FROM node:18
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --omit=dev
+RUN npm install
 
 COPY . .
 
-USER node
+COPY wizexercise.txt /app/wizexercise.txt
 
 EXPOSE 3000
 
