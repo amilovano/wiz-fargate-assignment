@@ -3,4 +3,7 @@ node_modules/
 terraform.tfstate
 terraform.tfstate.backup
 .env
+.DS_Storenode_modules/
+.terraform/
+*.tfstate*
 .DS_Store
