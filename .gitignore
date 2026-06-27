@@ -1,9 +1,6 @@
 node_modules/
 .terraform/
-terraform.tfstate
-terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
 .env
-.DS_Storenode_modules/
-.terraform/
-*.tfstate*
 .DS_Store
