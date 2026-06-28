@@ -1,33 +1,32 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wiz-app
-
+  name: tasky
 spec:
-  replicas: 2
-
+  replicas: 1
   selector:
     matchLabels:
-      app: wiz-app
-
+      app: tasky
   template:
     metadata:
       labels:
-        app: wiz-app
-
+        app: tasky
     spec:
-      serviceAccountName: wiz-app-sa
-
       containers:
-      - name: wiz-app
-        image: YOUR_ECR_IMAGE
-
+      - name: tasky
+        image: 191798898535.dkr.ecr.us-east-1.amazonaws.com/tasky-app:latest
         ports:
-        - containerPort: 3000
+        - containerPort: 8080
 
         env:
-        - name: MONGO_URI
+        - name: MONGODB_URI
           valueFrom:
             secretKeyRef:
-              name: mongo-secret
-              key: MONGO_URI
+              name: tasky-secret
+              key: MONGODB_URI
+
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tasky-secret
+              key: SECRET_KEY
