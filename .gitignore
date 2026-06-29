@@ -1,6 +1,11 @@
-node_modules/
-.terraform/
-*.tfstate
-*.tfstate.*
-.env
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/.terraform.lock.hcl
+
+# App
+app/.env
+
+# macOS
 .DS_Store
