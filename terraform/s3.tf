@@ -1,11 +1,17 @@
-resource "aws_s3_bucket" "mongo_backups" {
-  bucket = "wiz-mongo-backups-${random_string.bucket_suffix.result}"
-}
-
+data "aws_caller_identity" "current" {}
 resource "random_string" "bucket_suffix" {
   length  = 6
   special = false
   upper   = false
+}
+
+resource "aws_s3_bucket" "mongo_backups" {
+  bucket        = "wiz-mongo-backups-${random_string.bucket_suffix.result}"
+  force_destroy = true
+
+  tags = {
+    Name = "wiz-backups"
+  }
 }
 
 # Intentional weakness required by assignment
@@ -18,23 +24,60 @@ resource "aws_s3_bucket_public_access_block" "backup" {
   restrict_public_buckets = false
 }
 
-resource "aws_s3_bucket_policy" "public_read" {
-
+resource "aws_s3_bucket_policy" "mongo_backups" {
   bucket = aws_s3_bucket.mongo_backups.id
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = "*"
-      Action = [
-        "s3:GetObject",
-        "s3:ListBucket"
-      ]
-      Resource = [
-        aws_s3_bucket.mongo_backups.arn,
-        "${aws_s3_bucket.mongo_backups.arn}/*"
-      ]
-    }]
+    Statement = [
+
+      # Intentional weakness for assignment
+      {
+        Effect    = "Allow"
+        Principal = "*"
+
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+
+        Resource = [
+          aws_s3_bucket.mongo_backups.arn,
+          "${aws_s3_bucket.mongo_backups.arn}/*"
+        ]
+      },
+
+      # Required for CloudTrail
+      {
+        Sid    = "AWSCloudTrailAclCheck"
+        Effect = "Allow"
+
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        }
+
+        Action   = "s3:GetBucketAcl"
+        Resource = aws_s3_bucket.mongo_backups.arn
+      },
+
+      {
+        Sid    = "AWSCloudTrailWrite"
+        Effect = "Allow"
+
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        }
+
+        Action = "s3:PutObject"
+
+        Resource = "${aws_s3_bucket.mongo_backups.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
+
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      }
+    ]
   })
 }
