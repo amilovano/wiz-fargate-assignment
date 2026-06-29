@@ -68,7 +68,7 @@ resource "aws_security_group" "mongo_vm" {
 # ── SSH Key Pair ─────────────────────────────────────────────────────────────
 resource "aws_key_pair" "mongo_vm" {
   key_name   = "wiz-mongo-vm-key"
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = var.ssh_public_key
 }
 
 # ── EC2 Instance ─────────────────────────────────────────────────────────────
