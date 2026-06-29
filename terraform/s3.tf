@@ -1,4 +1,7 @@
+# s3.tf
+
 data "aws_caller_identity" "current" {}
+
 resource "random_string" "bucket_suffix" {
   length  = 6
   special = false
@@ -58,6 +61,12 @@ resource "aws_s3_bucket_policy" "mongo_backups" {
 
         Action   = "s3:GetBucketAcl"
         Resource = aws_s3_bucket.mongo_backups.arn
+
+        Condition = {
+          StringEquals = {
+            "aws:SourceArn" = "arn:aws:cloudtrail:us-east-1:${data.aws_caller_identity.current.account_id}:trail/wiz-cloudtrail"
+          }
+        }
       },
 
       {
@@ -68,9 +77,40 @@ resource "aws_s3_bucket_policy" "mongo_backups" {
           Service = "cloudtrail.amazonaws.com"
         }
 
-        Action = "s3:PutObject"
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.mongo_backups.arn}/cloudtrail/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
 
-        Resource = "${aws_s3_bucket.mongo_backups.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl"  = "bucket-owner-full-control"
+            "aws:SourceArn" = "arn:aws:cloudtrail:us-east-1:${data.aws_caller_identity.current.account_id}:trail/wiz-cloudtrail"
+          }
+        }
+      },
+
+      # Required for AWS Config
+      {
+        Sid    = "AWSConfigBucketPermissionsCheck"
+        Effect = "Allow"
+
+        Principal = {
+          Service = "config.amazonaws.com"
+        }
+
+        Action   = "s3:GetBucketAcl"
+        Resource = aws_s3_bucket.mongo_backups.arn
+      },
+
+      {
+        Sid    = "AWSConfigBucketDelivery"
+        Effect = "Allow"
+
+        Principal = {
+          Service = "config.amazonaws.com"
+        }
+
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.mongo_backups.arn}/awsconfig/AWSLogs/${data.aws_caller_identity.current.account_id}/Config/*"
 
         Condition = {
           StringEquals = {
@@ -81,3 +121,4 @@ resource "aws_s3_bucket_policy" "mongo_backups" {
     ]
   })
 }
+

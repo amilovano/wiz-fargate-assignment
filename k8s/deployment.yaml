@@ -12,19 +12,18 @@ spec:
       labels:
         app: tasky
     spec:
+      serviceAccountName: wiz-app-sa
       containers:
       - name: tasky
         image: 191798898535.dkr.ecr.us-east-1.amazonaws.com/tasky-app:latest
         ports:
         - containerPort: 8080
-
         env:
         - name: MONGODB_URI
           valueFrom:
             secretKeyRef:
               name: tasky-secret
               key: MONGODB_URI
-
         - name: SECRET_KEY
           valueFrom:
             secretKeyRef:
